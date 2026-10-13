@@ -4,6 +4,10 @@ from rest_framework.generics import ListCreateAPIView, RetrieveUpdateAPIView
 from .serializers import TicketSerializer, TicketUpdateSerializer
 from .models import Ticket
 from rest_framework.exceptions import ValidationError
+from rest_framework.views import APIView
+from django.db.models import Count
+from rest_framework.response import Response
+from rest_framework import status as http
 
 
 # Create your views here.
@@ -42,3 +46,10 @@ class TicketDetailView(RetrieveUpdateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(TicketSerializer(instance).data)
+
+# A view that gives statistics about the tickets in the database, including the total number of tickets and the number of tickets in each status category.  
+class TicketStatsView(APIView):
+    def get(self, request):
+        counts = dict(Ticket.objects.values_list('status').annotate(n=Count('id')))
+        # Always return every status even if its value is 0
+        return Response({s: counts.get(s, 0) for s in Ticket.Status.values}, status=http.HTTP_200_OK)
