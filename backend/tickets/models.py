@@ -6,14 +6,14 @@ from django.db import models
 # Create the Tickets model with the Ticket Status, the Priority to be given to the ticekt and the Meta for ordering 
 class Ticket(models.Model): 
     class Status(models.TextChoices):
-        OPEN = 'Open',
-        IN_PROGRESS = 'In Progress',
-        CLOSED = 'Closed',
+        OPEN = 'open',
+        IN_PROGRESS = 'in_progress',
+        CLOSED = 'closed',
 
     class Priority(models.TextChoices):
-        LOW = 'Low',
-        MEDIUM = 'Medium',
-        HIGH = 'High',
+        LOW = 'low',
+        MEDIUM = 'medium',
+        HIGH = 'high',
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=200)
