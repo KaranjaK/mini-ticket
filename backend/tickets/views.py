@@ -26,3 +26,19 @@ class TicketListCreateView(ListCreateAPIView):
                 raise ValidationError({"status": f"Must be one of: {', '.join(Ticket.Status.values)}"})
             qs = qs.filter(status=status_param)
         return qs
+
+#A view that handles the display of each ticket detail information
+class TicketDetailView(RetrieveUpdateAPIView):
+    queryset = Ticket.objects.all()
+    http_method_names = ['get', 'patch', 'head', 'options']  # Specifies the allowed HTTP methods
+
+    def get_serializer_class(self):
+        return TicketUpdateSerializer if self.request.method == 'PATCH' else TicketSerializer
+
+    def update(self, request, *args, **kwargs):
+        # Override the update method to handle PATCH requests and update the ticket status
+        instance = self.get_object()
+        serializer = TicketUpdateSerializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(TicketSerializer(instance).data)
