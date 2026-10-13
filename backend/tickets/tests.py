@@ -1,4 +1,5 @@
 #Tests to be used on testing the APIs are working
+#The tests are created with an aim of answering the qustions, given, when, then in that order
 from rest_framework.test import APITestCase
 
 from .models import Ticket
