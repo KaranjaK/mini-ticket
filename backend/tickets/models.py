@@ -24,3 +24,6 @@ class Ticket(models.Model):
 
     class Meta:
         ordering = ['-created_at', 'id']
+
+    def __str__(self):
+        return self.title
