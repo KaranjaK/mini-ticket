@@ -5,11 +5,20 @@ const STATUSES = ["open", "in_progress", "closed"];
 const PRIORITIES = ["low", "medium", "high"];
 const LABEL = { open: "Open", in_progress: "In progress", closed: "Closed", low: "Low", medium: "Medium", high: "High" };
 const STATUS_STYLE = {
-  open: "bg-sky-100 text-sky-800",
-  in_progress: "bg-amber-100 text-amber-800",
-  closed: "bg-stone-200 text-stone-600",
+  open: "bg-sky-50 text-sky-700 ring-sky-600/20",
+  in_progress: "bg-amber-50 text-amber-700 ring-amber-600/20",
+  closed: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
 };
-const PRIORITY_STYLE = { low: "text-stone-500", medium: "text-stone-800", high: "text-rose-700 font-semibold" };
+const PRIORITY_STYLE = {
+  low: "bg-stone-100 text-stone-600",
+  medium: "bg-indigo-50 text-indigo-700",
+  high: "bg-rose-50 text-rose-700",
+};
+const SUMMARY_STYLE = {
+  open: "border-sky-200 before:bg-sky-500",
+  in_progress: "border-amber-200 before:bg-amber-500",
+  closed: "border-emerald-200 before:bg-emerald-500",
+};
 const LIMIT = 8;
 
 export default function App() {
@@ -46,23 +55,43 @@ export default function App() {
   const pages = Math.max(1, Math.ceil(total / LIMIT));
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-10">
-      <h1 className="text-2xl font-semibold tracking-tight">Support tickets</h1>
-      <p className="mt-1 text-sm text-stone-500">
-        {stats.open} open · {stats.in_progress} in progress · {stats.closed} closed
-      </p>
+    <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+      <header className="mb-7">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-600">Ticket desk</p>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight text-stone-950 sm:text-4xl">Support tickets</h1>
+        <p className="mt-2 text-sm text-stone-600">Keep track of customer requests and what needs attention.</p>
+      </header>
 
-      {error && <p role="alert" className="mt-4 rounded bg-rose-50 px-3 py-2 text-sm text-rose-800">{error}</p>}
+      <section className="grid gap-3 sm:grid-cols-3" aria-label="Ticket summary">
+        {STATUSES.map((status) => (
+          <article
+            key={status}
+            className={`relative overflow-hidden rounded-xl border bg-white p-4 shadow-sm before:absolute before:inset-y-0 before:left-0 before:w-1 ${SUMMARY_STYLE[status]}`}
+          >
+            <p className="text-sm font-medium text-stone-600">{LABEL[status]}</p>
+            <p className="mt-2 text-3xl font-bold tracking-tight text-stone-950">{stats[status]}</p>
+          </article>
+        ))}
+      </section>
+
+      {error && (
+        <p role="alert" className="mt-5 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          {error}
+        </p>
+      )}
 
       <NewTicketForm onCreated={() => { setPage(1); load(); }} onError={setError} />
 
-      <div className="mt-8 flex items-center gap-2" role="tablist" aria-label="Filter by status">
+      <div className="mt-9 flex flex-wrap items-center gap-2" role="group" aria-label="Filter by status">
+        <span className="mr-1 text-sm font-semibold text-stone-700">Tickets</span>
         {["", ...STATUSES].map((s) => (
           <button
             key={s || "all"}
+            type="button"
+            aria-pressed={filter === s}
             onClick={() => { setFilter(s); setPage(1); }}
-            className={`rounded-full px-3 py-1 text-sm focus-visible:outline-2 focus-visible:outline-stone-900 ${
-              filter === s ? "bg-stone-900 text-white" : "bg-white text-stone-700 ring-1 ring-stone-300 hover:bg-stone-100"
+            className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${
+              filter === s ? "bg-indigo-600 text-white shadow-sm" : "bg-white text-stone-700 ring-1 ring-stone-300 hover:bg-indigo-50 hover:text-indigo-700"
             }`}
           >
             {s ? LABEL[s] : "All"}
@@ -70,28 +99,37 @@ export default function App() {
         ))}
       </div>
 
-      <ul className="mt-4 divide-y divide-stone-200 rounded-lg bg-white ring-1 ring-stone-200">
-        {loading && <li className="p-6 text-sm text-stone-500">Loading tickets…</li>}
-        {!loading && tickets.length === 0 && (
-          <li className="p-6 text-sm text-stone-500">No tickets here yet. Create one above.</li>
-        )}
-        {tickets.map((t) => (
-          <li key={t.id} className="flex flex-wrap items-start justify-between gap-3 p-4">
+      <ul className="mt-4 divide-y divide-stone-100 overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-stone-200/80">
+        {loading ? Array.from({ length: 3 }, (_, i) => (
+          <li key={i} aria-hidden="true" className="animate-pulse space-y-3 p-5">
+            <div className="h-4 w-1/3 rounded bg-stone-200" />
+            <div className="h-3 w-2/3 rounded bg-stone-100" />
+            <div className="h-3 w-1/4 rounded bg-stone-100" />
+          </li>
+        )) : tickets.length === 0 ? (
+          <li className="p-8 text-center">
+            <p className="font-semibold text-stone-800">No tickets to show</p>
+            <p className="mt-1 text-sm text-stone-500">Try another status filter or create a new ticket above.</p>
+          </li>
+        ) : tickets.map((t) => (
+          <li key={t.id} className="flex flex-wrap items-start justify-between gap-4 p-5 transition-colors hover:bg-stone-50/80">
             <div className="min-w-0 flex-1">
-              <p className="font-medium">{t.title}</p>
+              <p className="font-semibold text-stone-900">{t.title}</p>
               {t.description && <p className="mt-0.5 line-clamp-2 text-sm text-stone-600">{t.description}</p>}
-              <p className="mt-1 text-xs text-stone-400">{new Date(t.created_at).toLocaleString()}</p>
+              <p className="mt-2 text-xs text-stone-500">{new Date(t.created_at).toLocaleString()}</p>
             </div>
-            <div className="flex items-center gap-3">
-              <span className={`text-sm ${PRIORITY_STYLE[t.priority]}`}>{LABEL[t.priority]} priority</span>
-              <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLE[t.status]}`}>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${PRIORITY_STYLE[t.priority]}`}>
+                {LABEL[t.priority]} priority
+              </span>
+              <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${STATUS_STYLE[t.status]}`}>
                 {LABEL[t.status]}
               </span>
               <select
                 aria-label={`Change status of ${t.title}`}
                 value={t.status}
                 onChange={(e) => changeStatus(t.id, e.target.value)}
-                className="rounded border border-stone-300 bg-white px-2 py-1 text-sm"
+                className="rounded-lg border border-stone-300 bg-white px-2.5 py-1.5 text-sm text-stone-700 shadow-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
               >
                 {STATUSES.map((s) => <option key={s} value={s}>{LABEL[s]}</option>)}
               </select>
@@ -103,9 +141,9 @@ export default function App() {
       <nav className="mt-4 flex items-center justify-between text-sm text-stone-600" aria-label="Pagination">
         <span>{total} ticket{total === 1 ? "" : "s"}</span>
         <div className="flex items-center gap-2">
-          <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="rounded px-3 py-1 ring-1 ring-stone-300 disabled:opacity-40">Previous</button>
+          <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="rounded-lg bg-white px-3 py-1.5 font-medium text-stone-700 shadow-sm ring-1 ring-stone-300 transition hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-40">Previous</button>
           <span>Page {page} of {pages}</span>
-          <button disabled={page >= pages} onClick={() => setPage(page + 1)} className="rounded px-3 py-1 ring-1 ring-stone-300 disabled:opacity-40">Next</button>
+          <button disabled={page >= pages} onClick={() => setPage(page + 1)} className="rounded-lg bg-white px-3 py-1.5 font-medium text-stone-700 shadow-sm ring-1 ring-stone-300 transition hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-40">Next</button>
         </div>
       </nav>
     </main>
@@ -132,24 +170,29 @@ function NewTicketForm({ onCreated, onError }) {
   };
 
   return (
-    <form onSubmit={submit} className="mt-6 grid gap-3 rounded-lg bg-white p-4 ring-1 ring-stone-200 sm:grid-cols-[1fr_auto]">
+    <form onSubmit={submit} className="mt-7 grid gap-4 rounded-2xl border border-indigo-100 bg-white p-5 shadow-sm sm:grid-cols-[1fr_auto] sm:p-6">
+      <div className="sm:col-span-2">
+        <h2 className="text-lg font-semibold tracking-tight text-stone-900">Create a ticket</h2>
+        <p className="mt-1 text-sm text-stone-500">Add a customer request to your queue.</p>
+      </div>
       <label className="block text-sm">
-        <span className="font-medium">Title</span>
+        <span className="font-semibold text-stone-700">Title</span>
         <input required maxLength={200} value={form.title} onChange={set("title")}
-          className="mt-1 w-full rounded border border-stone-300 px-3 py-2" placeholder="Customer can't reset password" />
+          className="mt-1.5 w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-stone-900 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+          placeholder="Customer can't reset password" />
       </label>
       <label className="block text-sm">
-        <span className="font-medium">Priority</span>
-        <select value={form.priority} onChange={set("priority")} className="mt-1 w-full rounded border border-stone-300 bg-white px-3 py-2">
+        <span className="font-semibold text-stone-700">Priority</span>
+        <select value={form.priority} onChange={set("priority")} className="mt-1.5 w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-stone-900 shadow-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
           {PRIORITIES.map((p) => <option key={p} value={p}>{LABEL[p]}</option>)}
         </select>
       </label>
       <label className="block text-sm sm:col-span-2">
-        <span className="font-medium">Description <span className="font-normal text-stone-400">(optional)</span></span>
-        <textarea rows={2} value={form.description} onChange={set("description")} className="mt-1 w-full rounded border border-stone-300 px-3 py-2" />
+        <span className="font-semibold text-stone-700">Description <span className="font-normal text-stone-400">(optional)</span></span>
+        <textarea rows={2} value={form.description} onChange={set("description")} className="mt-1.5 w-full resize-y rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-stone-900 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20" />
       </label>
       <div className="sm:col-span-2">
-        <button disabled={saving} className="rounded bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-50">
+        <button disabled={saving} className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-wait disabled:opacity-60">
           {saving ? "Creating…" : "Create ticket"}
         </button>
       </div>
